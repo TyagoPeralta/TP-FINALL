@@ -1,0 +1,251 @@
+{
+  "info": {
+    "name": "Toolshop — TP Final Integración",
+    "_postman_id": "tp-final-toolshop-2026",
+    "description": "Colección de tests de integración para la API de Practice Software Testing (Toolshop). UNSTA 2026 — Testeo Automatizado.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [],
+  "item": [
+    {
+      "name": "IT01 — GET /products (listado con paginación)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// ─────────────────────────────────────────────────────────",
+              "// IT01: GET /products",
+              "// Valida que el endpoint público de productos retorna",
+              "// status 200, un array no vacío y metadatos de paginación.",
+              "// ─────────────────────────────────────────────────────────",
+              "",
+              "// Assertion 1: Status 200 OK",
+              "pm.test('IT01 — Status 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "// Assertion 2: El body contiene el array 'data' no vacío",
+              "pm.test('IT01 — Array data presente y no vacío', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json).to.have.property('data');",
+              "    pm.expect(json.data).to.be.an('array').that.is.not.empty;",
+              "});",
+              "",
+              "// Assertion 3: Paginación presente (meta.total > 0 y current_page === 1)",
+              "pm.test('IT01 — Paginación: meta.total > 0 y current_page = 1', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json).to.have.property('meta');",
+              "    pm.expect(json.meta.total).to.be.above(0);",
+              "    pm.expect(json.meta.current_page).to.equal(1);",
+              "});",
+              "",
+              "// Assertion 4: Cada producto tiene al menos id, name y price",
+              "pm.test('IT01 — Cada producto tiene id, name y price', function () {",
+              "    const json = pm.response.json();",
+              "    const primerProducto = json.data[0];",
+              "    pm.expect(primerProducto).to.have.property('id');",
+              "    pm.expect(primerProducto).to.have.property('name');",
+              "    pm.expect(primerProducto).to.have.property('price');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/products?page=1",
+          "host": ["{{baseUrl}}"],
+          "path": ["products"],
+          "query": [
+            { "key": "page", "value": "1" }
+          ]
+        },
+        "description": "Obtiene el listado público de productos con paginación. No requiere autenticación."
+      },
+      "response": []
+    },
+    {
+      "name": "IT02 — POST /users/login (autenticación exitosa)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// ─────────────────────────────────────────────────────────",
+              "// IT02: POST /users/login",
+              "// Valida el flujo de login exitoso con credenciales",
+              "// del usuario de prueba público de Toolshop.",
+              "// Guarda el token en la variable de entorno 'authToken'",
+              "// para reutilizarlo en IT04.",
+              "// ─────────────────────────────────────────────────────────",
+              "",
+              "// Assertion 1: Status 200 OK",
+              "pm.test('IT02 — Status 200 OK (login exitoso)', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "// Assertion 2: El body contiene access_token",
+              "pm.test('IT02 — Body contiene access_token (string no vacío)', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json).to.have.property('access_token');",
+              "    pm.expect(json.access_token).to.be.a('string').that.is.not.empty;",
+              "});",
+              "",
+              "// Assertion 3: token_type es 'Bearer'",
+              "pm.test('IT02 — token_type es Bearer', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.token_type).to.equal('Bearer');",
+              "});",
+              "",
+              "// Guardar el token en entorno para usar en IT04",
+              "const json = pm.response.json();",
+              "if (json && json.access_token) {",
+              "    pm.environment.set('authToken', json.access_token);",
+              "    console.log('Token guardado en authToken:', json.access_token.substring(0, 30) + '...');",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"customer@practicesoftwaretesting.com\",\n  \"password\": \"welcome01\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/users/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["users", "login"]
+        },
+        "description": "Login con el usuario de prueba público de Toolshop. Guarda el JWT en la variable 'authToken'."
+      },
+      "response": []
+    },
+    {
+      "name": "IT03 — GET /products/nonexistent (ID inexistente → 404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// ─────────────────────────────────────────────────────────",
+              "// IT03: GET /products/{id}",
+              "// Valida el manejo de error cuando se busca un producto",
+              "// con un ID que no existe en la base de datos.",
+              "// ─────────────────────────────────────────────────────────",
+              "",
+              "// Assertion 1: Status 404 Not Found",
+              "pm.test('IT03 — Status 404 para producto inexistente', function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "// Assertion 2: El body contiene la propiedad 'message'",
+              "pm.test('IT03 — Body contiene propiedad message', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json).to.have.property('message');",
+              "    pm.expect(json.message).to.be.a('string').that.is.not.empty;",
+              "});",
+              "",
+              "// Assertion 3: Content-Type es application/json",
+              "pm.test('IT03 — Content-Type es application/json', function () {",
+              "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/products/nonexistent-product-id-00000",
+          "host": ["{{baseUrl}}"],
+          "path": ["products", "nonexistent-product-id-00000"]
+        },
+        "description": "Intenta obtener un producto con un ID que no existe. Se espera un 404 con mensaje de error."
+      },
+      "response": []
+    },
+    {
+      "name": "IT04 — GET /account (sin token → 401 Unauthorized)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// ─────────────────────────────────────────────────────────",
+              "// IT04: GET /account",
+              "// Valida que el sistema rechaza el acceso a un recurso",
+              "// protegido cuando no se proporciona el Bearer Token.",
+              "// Este test cubre el middleware de autenticación de la API.",
+              "// ─────────────────────────────────────────────────────────",
+              "",
+              "// Assertion 1: Status 401 Unauthorized",
+              "pm.test('IT04 — Status 401 sin Authorization header', function () {",
+              "    pm.response.to.have.status(401);",
+              "});",
+              "",
+              "// Assertion 2: Body contiene mensaje de error de autenticación",
+              "pm.test('IT04 — Mensaje de error de autenticación presente', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json).to.have.property('message');",
+              "    pm.expect(json.message).to.be.a('string').that.is.not.empty;",
+              "});",
+              "",
+              "// Assertion 3: El body NO contiene datos privados del usuario",
+              "pm.test('IT04 — Body no expone datos privados del usuario', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json).to.not.have.property('email');",
+              "    pm.expect(json).to.not.have.property('first_name');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/account",
+          "host": ["{{baseUrl}}"],
+          "path": ["account"]
+        },
+        "description": "Accede a la ruta privada /account SIN incluir el token de autenticación. Se espera un 401 Unauthorized."
+      },
+      "response": []
+    }
+  ]
+}

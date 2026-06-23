@@ -1,0 +1,21 @@
+{
+  "name": "Toolshop — Production Environment",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.practicesoftwaretesting.com",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment",
+  "info": {
+    "description": "Entorno de producción para Toolshop API. Cambiar baseUrl a http://localhost:8091 para tests locales con Docker."
+  }
+}

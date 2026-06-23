@@ -1,0 +1,16 @@
+{
+  "name": "tp-final-testeo-automatizado",
+  "version": "1.0.0",
+  "description": "TP Final — Testeo Automatizado | Practice Software Testing (Toolshop) | UNSTA 2026",
+  "scripts": {
+    "test:unit": "mocha unit-tests/test/*.test.js --reporter spec",
+    "coverage": "nyc --reporter=text --reporter=html mocha unit-tests/test/*.test.js",
+    "test:integration": "newman run integration-tests/Toolshop_Collection.json -e integration-tests/Toolshop_Environment.json -r htmlextra --reporter-htmlextra-export integration-tests/newman/report.html"
+  },
+  "devDependencies": {
+    "chai": "^6.0.0",
+    "mocha": "^11.0.0",
+    "nyc": "^18.0.0",
+    "sinon": "^21.0.0"
+  }
+}
